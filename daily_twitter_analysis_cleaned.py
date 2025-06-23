@@ -16,7 +16,7 @@ if not BEARER_TOKEN:
     raise ValueError("❌ TWITTER_BEARER secret is not set in GitHub repository secrets.")
 
 # ==== MongoDB Setup ====
-client = MongoClient(MONGO_URI)
+client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True)
 db = client["twitter_analysis"]
 collection = db["daily_reports"]
 
