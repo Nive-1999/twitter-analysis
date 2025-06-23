@@ -25,7 +25,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install tweepy pymongo pandas openpyxl pytz
 
-      - name: Run Twitter Analysis
+      - name: Run Daily Twitter Analysis
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
