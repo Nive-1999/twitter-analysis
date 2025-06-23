@@ -170,3 +170,5 @@ for handle in news_handles:
 
     collection.insert_one(summary)
     print(f"✅ Data inserted for {handle}")
+
+
