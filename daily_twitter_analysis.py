@@ -1,4 +1,4 @@
- import os
+import os
 import tweepy
 import datetime
 from collections import Counter, defaultdict
@@ -7,8 +7,13 @@ import pandas as pd
 from pymongo import MongoClient
 
 # ==== Secrets from GitHub Actions ====
-MONGO_URI = os.environ["MONGO_URI"]
-BEARER_TOKEN = os.environ["TWITTER_BEARER"]
+MONGO_URI = os.getenv("MONGO_URI")
+BEARER_TOKEN = os.getenv("TWITTER_BEARER")
+
+if not MONGO_URI:
+    raise ValueError("❌ MONGO_URI secret is not set in GitHub repository secrets.")
+if not BEARER_TOKEN:
+    raise ValueError("❌ TWITTER_BEARER secret is not set in GitHub repository secrets.")
 
 # ==== MongoDB Setup ====
 client = MongoClient(MONGO_URI)
