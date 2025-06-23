@@ -1,3 +1,4 @@
+ import os
 import tweepy
 import datetime
 from collections import Counter, defaultdict
@@ -5,19 +6,22 @@ import pytz
 import pandas as pd
 from pymongo import MongoClient
 
-# ==== Twitter API Bearer Token ====
-BEARER_TOKEN = "AAAAAAAAAAAAAAAAAAAAALRC2gEAAAAAGSkUF9M0AlsTpq%2F0uPyhGnBQXss%3DOOOHCzR9EdpuyBjz1WizGS1GnWqyizKRwFOn7taQyM6TqSg25F"
-client = tweepy.Client(bearer_token=BEARER_TOKEN, wait_on_rate_limit=True)
+# ==== Secrets from GitHub Actions ====
+MONGO_URI = os.environ["MONGO_URI"]
+BEARER_TOKEN = os.environ["TWITTER_BEARER"]
 
 # ==== MongoDB Setup ====
-MONGO_URI = "mongodb+srv://niveditha:NdeZU4l4G63c594g@cluster0.mvz2fhb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-mongo_client = MongoClient(MONGO_URI)
-db = mongo_client["twitter_analysis"]
+client = MongoClient(MONGO_URI)
+db = client["twitter_analysis"]
 collection = db["daily_reports"]
+
+# ==== Twitter Client ====
+twitter = tweepy.Client(bearer_token=BEARER_TOKEN, wait_on_rate_limit=True)
 
 # ==== News Handles ====
 news_handles = [
-    "PTI_News", "etvandhraprades", "bbcnewstelugu", "GulteOfficial", "99TVTelugu"
+    "PTI_News", "etvandhraprades", "bbcnewstelugu",
+    "GulteOfficial", "99TVTelugu"
 ]
 
 # ==== Party Leader Keywords ====
@@ -29,16 +33,20 @@ leader_keywords = {
     "inc": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
 }
 
+# ==== Government Keywords ====
 govt_keywords = [
     "ap liquor scam", "apliquorscam", "#apliquorscam", "liquor case", "liquor scam", "ysrcp liquor",
     "jagan liquor", "liquor mafia", "ap liquor", "liquor irregularities", "liquor tenders"
 ]
 
+# ==== Telangana Keywords to Exclude INC ====
 telangana_keywords = ["telangana", "kcr", "ktr", "brs", "#brs", "b.r.s", "cmrevanthreddy", "revanthreddy"]
 
+# ==== Specific Keywords to Track ====
 specific_keywords = [
     "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
-    "tdp", "ysrcp", "naralokesh", "janasena", "pithapuram", "thallikivandanam", "rapparappa", "ncbn", "chandrababuNaidu"
+    "tdp", "ysrcp", "naralokesh", "janasena", "pithapuram", "thallikivandanam",
+    "rapparappa", "ncbn", "chandrababuNaidu"
 ]
 
 # ==== Time Setup ====
@@ -49,6 +57,7 @@ end_ist = datetime.datetime.combine(target_date, datetime.time(23, 59, 59, tzinf
 start_time = start_ist.astimezone(pytz.UTC).isoformat()
 end_time = end_ist.astimezone(pytz.UTC).isoformat()
 
+# ==== Time Slot Buckets ====
 time_slots = {
     "12 AM–2:59 AM": (0, 3),
     "3 AM–5:59 AM": (3, 6),
@@ -70,13 +79,12 @@ def get_time_slot(dt):
 def fetch_tweets(username, start_time, end_time, max_results=100):
     tweets = []
     try:
-        user = client.get_user(username=username)
+        user = twitter.get_user(username=username)
         if not user.data:
-            print(f"❌ User not found: {username}")
             return []
         uid = user.data.id
         paginator = tweepy.Paginator(
-            client.get_users_tweets,
+            twitter.get_users_tweets,
             id=uid,
             start_time=start_time,
             end_time=end_time,
@@ -90,10 +98,7 @@ def fetch_tweets(username, start_time, end_time, max_results=100):
         print(f"⚠️ Error fetching tweets for {username}: {e}")
     return tweets
 
-all_summaries = []
-
 for handle in news_handles:
-    print(f"\n📥 Processing @{handle}...")
     tweets = fetch_tweets(handle, start_time, end_time)
     counts = defaultdict(int)
     hashtag_counter = Counter()
@@ -110,7 +115,7 @@ for handle in news_handles:
 
         for party, keywords in leader_keywords.items():
             if party == "inc":
-                if "sharmila" in text:
+                if "sharmila" in text or "ys sharmila" in text:
                     if not any(tel_kw in text for tel_kw in telangana_keywords):
                         counts["INC_Related"] += 1
                 continue
@@ -158,8 +163,5 @@ for handle in news_handles:
     for kw in specific_keywords:
         summary[f"{kw}_mentions"] = keyword_counter.get(kw, 0)
 
-    all_summaries.append(summary)
-
-# ==== Insert into MongoDB ====
-collection.insert_many(all_summaries)
-print(f"✅ Inserted {len(all_summaries)} records into MongoDB")
+    collection.insert_one(summary)
+    print(f"✅ Data inserted for {handle}")
