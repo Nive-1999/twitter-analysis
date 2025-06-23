@@ -1,15 +1,10 @@
-yml file 
-
-name: Daily Twitter Analysis
-
-on:
-  schedule:
-    - cron: '30 2 * * *'  # Runs daily at 8:00 AM IST (2:30 UTC)
-  workflow_dispatch:  # Allows manual run
-
 jobs:
   run-script:
     runs-on: ubuntu-latest
+
+    env:  # ✅ Environment variables moved here
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+      TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
 
     steps:
       - name: Checkout repo
@@ -26,10 +21,5 @@ jobs:
           pip install tweepy pymongo pandas openpyxl pytz
 
       - name: Run Daily Twitter Analysis
-        env:
-          MONGO_URI: ${{ secrets.MONGO_URI }}
-          TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
         run: |
           python daily_twitter_analysis.py
-
-
