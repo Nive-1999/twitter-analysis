@@ -204,6 +204,47 @@ def run_in_batches(handles, batch_size=5):
 
     return all_summaries
 
+import yagmail
+from datetime import datetime
+
+def send_excel_report_to_email(data):
+    # 1. Save to Excel
+    df = pd.DataFrame(data)
+    filename = f"Twitter_Report_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
+    df.to_excel(filename, index=False)
+
+    # 2. Setup email (uses Gmail SMTP with App Password)
+    sender_email = os.getenv("SENDER_EMAIL")          # your Gmail address
+    sender_password = os.getenv("SENDER_PASSWORD")    # app password, NOT your main Gmail password
+    recipient_email = os.getenv("TO_EMAIL")           # recipient
+    cc_email = os.getenv("CC_EMAIL")                  # CC recipient (optional)
+
+    yag = yagmail.SMTP(user=sender_email, password=sender_password)
+
+    subject = f"🗳️ Daily Twitter News Analysis Report - {datetime.now().strftime('%d %B %Y')}"
+    body = "Hi,\n\nPlease find attached the daily Twitter analysis report for all 15 Telugu news handles.\n\nBest regards,\nAutomated Report"
+
+    yag.send(
+        to=recipient_email,
+        cc=cc_email,
+        subject=subject,
+        contents=body,
+        attachments=[filename]
+    )
+    print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
+
+# === Main block update ===
 if __name__ == "__main__":
     final_summaries = run_in_batches(news_handles, batch_size=5)
     print(f"\n✅ All {len(final_summaries)} handles processed and inserted to MongoDB.")
+
+    # ⬇️ Fetch back today's data from MongoDB
+    today_str = str(target_date)
+    cursor = collection.find({"Date": today_str})
+    report_data = list(cursor)
+
+    if report_data:
+        send_excel_report_to_email(report_data)
+    else:
+        print("⚠️ No data found to email.")
+
