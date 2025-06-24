@@ -25,7 +25,7 @@ jobs:
 
       - name: ▶️ Run Twitter analysis script
         run: |
-          python twitter_analysis/daily.py
+          python "Daily-twitter-news handles.py"
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
