@@ -3,7 +3,7 @@ name: 📊 Daily Twitter Analysis
 on:
   schedule:
     - cron: '30 10 * * *'  # 🕓 Runs daily at 4:00 PM IST (10:30 AM UTC)
-  workflow_dispatch:
+  workflow_dispatch:       # ✅ Allows manual trigger
 
 jobs:
   twitter-analysis:
@@ -25,7 +25,7 @@ jobs:
 
       - name: ▶️ Run Twitter analysis script
         run: |
-          python "Daily-twitter-news handles.py"
+          python daily_news_twitter_analysis.py
         env:
           MONGO_URI: ${{ secrets.MONGO_URI }}
           TWITTER_BEARER: ${{ secrets.TWITTER_BEARER }}
