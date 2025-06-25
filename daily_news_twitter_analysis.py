@@ -247,4 +247,3 @@ if __name__ == "__main__":
         send_excel_report_to_email(report_data)
     else:
         print("⚠️ No data found to email.")
-
