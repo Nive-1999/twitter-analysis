@@ -8,10 +8,9 @@ import unicodedata
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yagmail
-from datetime import datetime
+import datetime as dt  # ✅ Renamed to avoid conflicts
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
-from openpyxl.utils import get_column_letter
 
 # ==== Secrets ====
 MONGO_URI = os.getenv("MONGO_URI")
@@ -65,9 +64,9 @@ specific_keywords = [
 
 # ==== Date/Time Setup ====
 ist = pytz.timezone("Asia/Kolkata")
-target_date = datetime.datetime.now(ist).date()
-start_ist = datetime.datetime.combine(target_date, datetime.time(0, 0, tzinfo=ist))
-end_ist = datetime.datetime.combine(target_date, datetime.time(23, 59, 59, tzinfo=ist))
+target_date = dt.datetime.now(ist).date()
+start_ist = dt.datetime.combine(target_date, dt.time(0, 0, tzinfo=ist))
+end_ist = dt.datetime.combine(target_date, dt.time(23, 59, 59, tzinfo=ist))
 start_time = start_ist.astimezone(pytz.UTC).isoformat()
 end_time = end_ist.astimezone(pytz.UTC).isoformat()
 
@@ -122,10 +121,10 @@ def process_handle(handle):
     most_viewed = {"views": 0, "text": "", "url": ""}
 
     for t in tweets:
-        dt = t.created_at.astimezone(ist)
+        dt_local = t.created_at.astimezone(ist)
         text = unicodedata.normalize("NFKC", t.text.lower())
         counts["Total"] += 1
-        slot = get_time_slot(dt)
+        slot = get_time_slot(dt_local)
         time_slot_counter[slot] += 1
 
         for party, keywords in leader_keywords.items():
@@ -247,7 +246,7 @@ def format_and_send_excel(filename):
     cc_email = os.getenv("CC_EMAIL")
 
     yag = yagmail.SMTP(user=sender_email, password=sender_password)
-    subject = f"🗳️ Daily Twitter News Analysis Report - {datetime.now().strftime('%d %B %Y')}"
+    subject = f"🗳️ Daily Twitter News Analysis Report - {dt.datetime.now().strftime('%d %B %Y')}"  # ✅ Fixed
     body = "Hi,\n\nPlease find attached the formatted daily News Twitter analysis report.\n\nBest regards,\nAutomated Report"
     yag.send(to=recipient_email, cc=cc_email, subject=subject, contents=body, attachments=[filename])
     print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
