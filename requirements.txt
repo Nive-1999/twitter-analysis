@@ -4,4 +4,5 @@ pandas
 pytz
 dnspython
 openpyxl
+yagmail
 sendgrid
