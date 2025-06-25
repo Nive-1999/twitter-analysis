@@ -5,3 +5,4 @@ pytz
 dnspython
 yagmail
 openpyxl
+sendgrid
