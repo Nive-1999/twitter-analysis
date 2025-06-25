@@ -3,6 +3,5 @@ pymongo
 pandas
 pytz
 dnspython
-yagmail
 openpyxl
 sendgrid
