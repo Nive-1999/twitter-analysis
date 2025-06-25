@@ -8,19 +8,27 @@ from pymongo import MongoClient
 import unicodedata
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-import yagmail
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail, Email, To, Cc, Attachment, FileContent, FileName, FileType, Disposition
+import base64
 
 # ==== Secrets ====
 MONGO_URI = os.getenv("MONGO_URI")
 BEARER_TOKEN = os.getenv("TWITTER_BEARER")
+SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+TO_EMAIL = os.getenv("TO_EMAIL")
+CC_EMAIL = os.getenv("CC_EMAIL")
 
 if not MONGO_URI:
     raise ValueError("❌ MONGO_URI secret is not set.")
 if not BEARER_TOKEN:
     raise ValueError("❌ TWITTER_BEARER secret is not set.")
+if not SENDGRID_API_KEY:
+    raise ValueError("❌ SENDGRID_API_KEY is not set.")
 
 # ==== MongoDB Setup ====
 mongo_client = MongoClient(MONGO_URI)
@@ -241,16 +249,38 @@ def format_and_send_excel(filename):
     wb.save(filename)
     print(f"📁 Final formatted Excel saved: {filename}")
 
-    sender_email = os.getenv("SENDER_EMAIL")
-    sender_password = os.getenv("SENDER_PASSWORD")
-    recipient_email = os.getenv("TO_EMAIL")
-    cc_email = os.getenv("CC_EMAIL")
+    with open(filename, "rb") as f:
+        data = f.read()
+        encoded_file = base64.b64encode(data).decode()
 
-    yag = yagmail.SMTP(user=sender_email, password=sender_password)
-    subject = f"🗳️ Daily Twitter News Analysis Report - {datetime.now().strftime('%d %B %Y')}"
-    body = "Hi,\n\nPlease find attached the formatted daily Twitter analysis report.\n\nBest regards,\nAutomated Report"
-    yag.send(to=recipient_email, cc=cc_email, subject=subject, contents=body, attachments=[filename])
-    print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
+    message = Mail(
+        from_email=Email(SENDER_EMAIL),
+        to_emails=To(TO_EMAIL),
+        subject=f"🗳️ Daily Twitter News Analysis Report - {datetime.datetime.now().strftime('%d %B %Y')}",
+        html_content="""
+        <p>Hi,</p>
+        <p>Please find attached the formatted daily Twitter analysis report.</p>
+        <p>Best regards,<br>Automated Report</p>
+        """
+    )
+
+    if CC_EMAIL:
+        message.add_cc(Cc(CC_EMAIL))
+
+    attachment = Attachment(
+        FileContent(encoded_file),
+        FileName(filename),
+        FileType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        Disposition("attachment")
+    )
+    message.attachment = attachment
+
+    try:
+        sg = SendGridAPIClient(SENDGRID_API_KEY)
+        response = sg.send(message)
+        print(f"📧 Email sent successfully. Status Code: {response.status_code}")
+    except Exception as e:
+        print(f"❌ Failed to send email: {e}")
 
 # ==== Main Run ====
 if __name__ == "__main__":
