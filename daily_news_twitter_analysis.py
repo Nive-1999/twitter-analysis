@@ -8,15 +8,19 @@ from pymongo import MongoClient
 import unicodedata
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import yagmail
+from openpyxl import load_workbook
+from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
 
-# ==== Secrets from GitHub Actions ====
+# ==== Secrets ====
 MONGO_URI = os.getenv("MONGO_URI")
 BEARER_TOKEN = os.getenv("TWITTER_BEARER")
 
 if not MONGO_URI:
-    raise ValueError("❌ MONGO_URI secret is not set in GitHub repository secrets.")
+    raise ValueError("❌ MONGO_URI secret is not set.")
 if not BEARER_TOKEN:
-    raise ValueError("❌ TWITTER_BEARER secret is not set in GitHub repository secrets.")
+    raise ValueError("❌ TWITTER_BEARER secret is not set.")
 
 # ==== MongoDB Setup ====
 mongo_client = MongoClient(MONGO_URI)
@@ -204,46 +208,53 @@ def run_in_batches(handles, batch_size=5):
 
     return all_summaries
 
-import yagmail
-from datetime import datetime
+def format_and_send_excel(filename):
+    wb = load_workbook(filename)
+    ws = wb.active
 
-def send_excel_report_to_email(data):
-    # 1. Save to Excel
-    df = pd.DataFrame(data)
-    filename = f"Twitter_Report_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
-    df.to_excel(filename, index=False)
+    for col in ws.columns:
+        max_len = 0
+        col_letter = col[0].column_letter
+        for cell in col:
+            if cell.value:
+                max_len = max(max_len, len(str(cell.value)))
+        ws.column_dimensions[col_letter].width = max(12, max_len + 2)
 
-    # 2. Setup email (uses Gmail SMTP with App Password)
-    sender_email = os.getenv("SENDER_EMAIL")          # your Gmail address
-    sender_password = os.getenv("SENDER_PASSWORD")    # app password, NOT your main Gmail password
-    recipient_email = os.getenv("TO_EMAIL")           # recipient
-    cc_email = os.getenv("CC_EMAIL")                  # CC recipient (optional)
+    ws.freeze_panes = "A2"
+    thin_border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+    header_fill = PatternFill("solid", fgColor="D9E1F2")
+    header_font = Font(bold=True)
+    center_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for row in ws.iter_rows():
+        for cell in row:
+            cell.border = thin_border
+            cell.alignment = center_align
+
+    for cell in ws[1]:
+        cell.fill = header_fill
+        cell.font = header_font
+
+    wb.save(filename)
+    print(f"📁 Final formatted Excel saved: {filename}")
+
+    sender_email = os.getenv("SENDER_EMAIL")
+    sender_password = os.getenv("SENDER_PASSWORD")
+    recipient_email = os.getenv("TO_EMAIL")
+    cc_email = os.getenv("CC_EMAIL")
 
     yag = yagmail.SMTP(user=sender_email, password=sender_password)
-
     subject = f"🗳️ Daily Twitter News Analysis Report - {datetime.now().strftime('%d %B %Y')}"
-    body = "Hi,\n\nPlease find attached the daily Twitter analysis report for all 15 Telugu news handles.\n\nBest regards,\nAutomated Report"
-
-    yag.send(
-        to=recipient_email,
-        cc=cc_email,
-        subject=subject,
-        contents=body,
-        attachments=[filename]
-    )
+    body = "Hi,\n\nPlease find attached the formatted daily Twitter analysis report.\n\nBest regards,\nAutomated Report"
+    yag.send(to=recipient_email, cc=cc_email, subject=subject, contents=body, attachments=[filename])
     print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
 
-# === Main block update ===
+# ==== Main Run ====
 if __name__ == "__main__":
-    final_summaries = run_in_batches(news_handles, batch_size=5)
-    print(f"\n✅ All {len(final_summaries)} handles processed and inserted to MongoDB.")
-
-    # ⬇️ Fetch back today's data from MongoDB
-    today_str = str(target_date)
-    cursor = collection.find({"Date": today_str})
-    report_data = list(cursor)
-
-    if report_data:
-        send_excel_report_to_email(report_data)
-    else:
-        print("⚠️ No data found to email.")
+    output_filename = "daily_twitter_analysis.xlsx"
+    df = pd.DataFrame(run_in_batches(news_handles))
+    df.to_excel(output_filename, index=False)
+    format_and_send_excel(output_filename)
