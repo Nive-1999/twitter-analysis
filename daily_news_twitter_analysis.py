@@ -1,6 +1,5 @@
 import os
 import tweepy
-import datetime
 from collections import Counter, defaultdict
 import pytz
 import pandas as pd
@@ -9,6 +8,7 @@ import unicodedata
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yagmail
+from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
@@ -248,7 +248,7 @@ def format_and_send_excel(filename):
 
     yag = yagmail.SMTP(user=sender_email, password=sender_password)
     subject = f"🗳️ Daily Twitter News Analysis Report - {datetime.now().strftime('%d %B %Y')}"
-    body = "Hi,\n\nPlease find attached the formatted daily Twitter analysis report.\n\nBest regards,\nAutomated Report"
+    body = "Hi,\n\nPlease find attached the formatted daily News Twitter analysis report.\n\nBest regards,\nAutomated Report"
     yag.send(to=recipient_email, cc=cc_email, subject=subject, contents=body, attachments=[filename])
     print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
 
