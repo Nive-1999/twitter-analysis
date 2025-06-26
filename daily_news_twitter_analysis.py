@@ -1,3 +1,5 @@
+# daily_twitter_analysis.py
+
 import os
 import tweepy
 from collections import Counter, defaultdict
@@ -46,18 +48,25 @@ news_handles = [
     "PTI_News", "etvandhraprades", "bbcnewstelugu", "GulteOfficial", "99TVTelugu"
 ]
 
-# ==== Keyword Setup ====
-leader_keywords = {
-    "tdp": ["chandrababuNaidu", "ncbn", "tdp", "lokesh", "naralokesh", "balakrishna",
-            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu", "Vangalapudianitha",
-            "@anitha_TDP", "చంద్రబాబు", "సీమ్ చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలక్రిష్ణ", "టిడిపి"],
-    "ysrcp": ["jagan", "ysjagan", "ys jagan", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini"],
-    "jsp": ["Pawankalyan", "janasena", "DeputyCMPawanKalyan"],
-    "bjp": ["bjp", "modi", "amit shah", "narendra modi", "#bjp", "pmmodi"],
-    "inc": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
+# ==== Party Keyword Dictionary ====
+party_keywords = {
+    "TDP": ["chandrababu", "tdp", "naralokesh", "ncbn"],
+    "YCP": ["ysjagan", "ysrcp", "ys jagan"],
+    "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
+    "BJP": ["bjp", "modi", "amit shah", "narendra modi"],
+    "INC": ["rahul gandhi", "congress", "inc", "yssharmila"]
 }
 
-# ==== Time Slots ====
+# ==== Exact Keyword Mentions ====
+specific_keywords = [
+    "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
+    "tdp", "ysrcp", "naralokesh", "janasena",
+    "pithapuram", "thallikivandanam", "rapparappa",
+    "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
+    "నారా లోకేష్", "లోకేష్"
+]
+
+# ==== Time Slot Configuration ====
 time_slots = {
     "12 AM–2:59 AM": (0, 3),
     "3 AM–5:59 AM": (3, 6),
@@ -118,11 +127,13 @@ def process_handle(handle):
         slot = get_time_slot(dt_ist)
         time_counts[slot] += 1
 
-        for party, keywords in leader_keywords.items():
-            for keyword in keywords:
-                if keyword.lower() in text:
-                    party_counts[party.upper()] += 1
-                    mention_counts[f"{keyword}_mentions"] += 1
+        for party, keywords in party_keywords.items():
+            if any(k.lower() in text for k in keywords):
+                party_counts[party] += 1
+
+        for keyword in specific_keywords:
+            if keyword.lower() in text:
+                mention_counts[f"{keyword}_mentions"] += 1
 
         if t.entities and "hashtags" in t.entities:
             for tag in t.entities["hashtags"]:
