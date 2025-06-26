@@ -8,18 +8,29 @@ import unicodedata
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import yagmail
-import datetime as dt  # ✅ Renamed to avoid conflicts
+import datetime as dt
 from openpyxl import load_workbook
 from openpyxl.styles import Border, Side, PatternFill, Font, Alignment
 
-# ==== Secrets ====
+# ==== Secrets from GitHub Environment ====
 MONGO_URI = os.getenv("MONGO_URI")
 BEARER_TOKEN = os.getenv("TWITTER_BEARER")
+SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+TO_EMAIL = os.getenv("TO_EMAIL")
+CC_EMAIL = os.getenv("CC_EMAIL")
 
-if not MONGO_URI:
-    raise ValueError("❌ MONGO_URI secret is not set.")
-if not BEARER_TOKEN:
-    raise ValueError("❌ TWITTER_BEARER secret is not set.")
+# ==== Validations ====
+for var, name in [
+    (MONGO_URI, "MONGO_URI"),
+    (BEARER_TOKEN, "TWITTER_BEARER"),
+    (SENDER_EMAIL, "SENDER_EMAIL"),
+    (SENDER_PASSWORD, "SENDER_PASSWORD"),
+    (TO_EMAIL, "TO_EMAIL"),
+    (CC_EMAIL, "CC_EMAIL"),
+]:
+    if not var:
+        raise ValueError(f"❌ Environment variable '{name}' is not set.")
 
 # ==== MongoDB Setup ====
 mongo_client = MongoClient(MONGO_URI)
@@ -40,29 +51,25 @@ news_handles = [
 leader_keywords = {
     "tdp": ["chandrababuNaidu", "ncbn", "tdp", "lokesh", "naralokesh", "balakrishna",
             "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
-            "Vangalapudianitha", "@anitha_TDP",
-            "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి",
-            "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
+            "Vangalapudianitha", "@anitha_TDP", "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్",
+            "లోకేష్", "బాలకృష్ణ", "టిడిపి", "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
     "ysrcp": ["jagan", "ysjagan", "ys jagan", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini"],
     "jsp": ["Pawankalyan", "janasena", "DeputyCMPawanKalyan"],
     "bjp": ["bjp", "modi", "amit shah", "narendra modi", "#bjp", "pmmodi"],
     "inc": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
 }
-
 govt_keywords = [
     "ap liquor scam", "apliquorscam", "#apliquorscam", "liquor case", "liquor scam",
     "ysrcp liquor", "jagan liquor", "liquor mafia", "ap liquor", "liquor irregularities", "liquor tenders"
 ]
-
 telangana_keywords = ["telangana", "kcr", "ktr", "brs", "#brs", "b.r.s", "cmrevanthreddy", "revanthreddy"]
-
 specific_keywords = [
     "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan", "tdp", "ysrcp", "naralokesh",
     "janasena", "pithapuram", "thallikivandanam", "rapparappa", "ncbn", "chandrababuNaidu",
     "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్"
 ]
 
-# ==== Date/Time Setup ====
+# ==== Time Setup ====
 ist = pytz.timezone("Asia/Kolkata")
 target_date = dt.datetime.now(ist).date()
 start_ist = dt.datetime.combine(target_date, dt.time(0, 0, tzinfo=ist))
@@ -82,11 +89,13 @@ time_slots = {
     "9 PM–11:59 PM": (21, 24)
 }
 
+
 def get_time_slot(dt):
     for slot, (s, e) in time_slots.items():
         if s <= dt.hour < e:
             return slot
     return "Unknown"
+
 
 def fetch_tweets(username, start_time, end_time, max_results=100):
     tweets = []
@@ -110,6 +119,7 @@ def fetch_tweets(username, start_time, end_time, max_results=100):
     except Exception as e:
         print(f"⚠️ Error fetching tweets for {username}: {e}")
     return tweets
+
 
 def process_handle(handle):
     print(f"\n📥 Processing @{handle}...")
@@ -181,6 +191,7 @@ def process_handle(handle):
     print(f"✅ Inserted summary for @{handle}")
     return summary
 
+
 def run_in_batches(handles, batch_size=5):
     all_summaries = []
     total_batches = (len(handles) + batch_size - 1) // batch_size
@@ -206,6 +217,7 @@ def run_in_batches(handles, batch_size=5):
             time.sleep(90)
 
     return all_summaries
+
 
 def format_and_send_excel(filename):
     wb = load_workbook(filename)
@@ -240,18 +252,13 @@ def format_and_send_excel(filename):
     wb.save(filename)
     print(f"📁 Final formatted Excel saved: {filename}")
 
-    sender_email = os.getenv("SENDER_EMAIL")
-    sender_password = os.getenv("SENDER_PASSWORD")
-    recipient_email = os.getenv("TO_EMAIL")
-    cc_email = os.getenv("CC_EMAIL")
+    yag = yagmail.SMTP(user=SENDER_EMAIL, password=SENDER_PASSWORD)
+    subject = f"𝕏 Daily Twitter News Analysis Report - {dt.datetime.now().strftime('%d %B %Y')}"
+    body = "Hi,\n\nPlease find below the attached daily News Twitter analysis report.\n\nBest regards,\nNiveditha\nData Analyst Associate\nShowtime Consulting"
+    yag.send(to=TO_EMAIL, cc=CC_EMAIL, subject=subject, contents=body, attachments=[filename])
+    print(f"📧 Email sent to {TO_EMAIL} with CC to {CC_EMAIL}")
 
-    yag = yagmail.SMTP(user=sender_email, password=sender_password)
-    subject = f"🗳️ Daily Twitter News Analysis Report - {dt.datetime.now().strftime('%d %B %Y')}"  # ✅ Fixed
-    body = "Hi,\n\nPlease find attached the formatted daily News Twitter analysis report.\n\nBest regards,\nAutomated Report"
-    yag.send(to=recipient_email, cc=cc_email, subject=subject, contents=body, attachments=[filename])
-    print(f"📧 Email sent to {recipient_email} with CC to {cc_email}")
 
-# ==== Main Run ====
 if __name__ == "__main__":
     output_filename = "daily_twitter_analysis.xlsx"
     df = pd.DataFrame(run_in_batches(news_handles))
