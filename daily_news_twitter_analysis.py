@@ -20,7 +20,6 @@ SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 TO_EMAIL = os.getenv("TO_EMAIL")
 CC_EMAIL = os.getenv("CC_EMAIL")
 
-# ==== Validations ====
 for var, name in [
     (MONGO_URI, "MONGO_URI"),
     (BEARER_TOKEN, "TWITTER_BEARER"),
@@ -47,35 +46,16 @@ news_handles = [
     "PTI_News", "etvandhraprades", "bbcnewstelugu", "GulteOfficial", "99TVTelugu"
 ]
 
-# ==== Keywords ====
+# ==== Keyword Setup ====
 leader_keywords = {
     "tdp": ["chandrababuNaidu", "ncbn", "tdp", "lokesh", "naralokesh", "balakrishna",
-            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
-            "Vangalapudianitha", "@anitha_TDP", "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్",
-            "లోకేష్", "బాలకృష్ణ", "టిడిపి", "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
+            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu", "Vangalapudianitha",
+            "@anitha_TDP", "చంద్రబాబు", "సీమ్ చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలక్రిష్ణ", "టిడిపి"],
     "ysrcp": ["jagan", "ysjagan", "ys jagan", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini"],
     "jsp": ["Pawankalyan", "janasena", "DeputyCMPawanKalyan"],
     "bjp": ["bjp", "modi", "amit shah", "narendra modi", "#bjp", "pmmodi"],
     "inc": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
 }
-govt_keywords = [
-    "ap liquor scam", "apliquorscam", "#apliquorscam", "liquor case", "liquor scam",
-    "ysrcp liquor", "jagan liquor", "liquor mafia", "ap liquor", "liquor irregularities", "liquor tenders"
-]
-telangana_keywords = ["telangana", "kcr", "ktr", "brs", "#brs", "b.r.s", "cmrevanthreddy", "revanthreddy"]
-specific_keywords = [
-    "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan", "tdp", "ysrcp", "naralokesh",
-    "janasena", "pithapuram", "thallikivandanam", "rapparappa", "ncbn", "chandrababuNaidu",
-    "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్"
-]
-
-# ==== Time Setup ====
-ist = pytz.timezone("Asia/Kolkata")
-target_date = dt.datetime.now(ist).date()
-start_ist = dt.datetime.combine(target_date, dt.time(0, 0, tzinfo=ist))
-end_ist = dt.datetime.combine(target_date, dt.time(23, 59, 59, tzinfo=ist))
-start_time = start_ist.astimezone(pytz.UTC).isoformat()
-end_time = end_ist.astimezone(pytz.UTC).isoformat()
 
 # ==== Time Slots ====
 time_slots = {
@@ -89,20 +69,24 @@ time_slots = {
     "9 PM–11:59 PM": (21, 24)
 }
 
-
 def get_time_slot(dt):
     for slot, (s, e) in time_slots.items():
         if s <= dt.hour < e:
             return slot
     return "Unknown"
 
+ist = pytz.timezone("Asia/Kolkata")
+target_date = dt.datetime.now(ist).date()
+start_ist = dt.datetime.combine(target_date, dt.time(0, 0, tzinfo=ist))
+end_ist = dt.datetime.combine(target_date, dt.time(23, 59, 59, tzinfo=ist))
+start_time = start_ist.astimezone(pytz.UTC).isoformat()
+end_time = end_ist.astimezone(pytz.UTC).isoformat()
 
 def fetch_tweets(username, start_time, end_time, max_results=100):
     tweets = []
     try:
         user = client.get_user(username=username)
         if not user.data:
-            print(f"❌ User not found: {username}")
             return []
         uid = user.data.id
         paginator = tweepy.Paginator(
@@ -117,107 +101,75 @@ def fetch_tweets(username, start_time, end_time, max_results=100):
             if page.data:
                 tweets.extend(page.data)
     except Exception as e:
-        print(f"⚠️ Error fetching tweets for {username}: {e}")
+        print(f"Error fetching tweets for {username}: {e}")
     return tweets
 
-
 def process_handle(handle):
-    print(f"\n📥 Processing @{handle}...")
     tweets = fetch_tweets(handle, start_time, end_time)
-    counts = defaultdict(int)
+    party_counts = defaultdict(int)
+    mention_counts = defaultdict(int)
+    time_counts = Counter()
     hashtag_counter = Counter()
-    keyword_counter = Counter()
-    time_slot_counter = Counter()
-    most_viewed = {"views": 0, "text": "", "url": ""}
+    tweet_views = []
 
     for t in tweets:
-        dt_local = t.created_at.astimezone(ist)
+        dt_ist = t.created_at.astimezone(ist)
         text = unicodedata.normalize("NFKC", t.text.lower())
-        counts["Total"] += 1
-        slot = get_time_slot(dt_local)
-        time_slot_counter[slot] += 1
+        slot = get_time_slot(dt_ist)
+        time_counts[slot] += 1
 
         for party, keywords in leader_keywords.items():
-            if party == "inc":
-                if "sharmila" in text or "ys sharmila" in text:
-                    if not any(tel_kw in text for tel_kw in telangana_keywords):
-                        counts["INC_Related"] += 1
-                continue
-            if any(kw.lower() in text for kw in keywords):
-                counts[f"{party.upper()}_Related"] += 1
-                break
-
-        if any(gk in text for gk in govt_keywords):
-            counts["Govt_Related"] += 1
+            for keyword in keywords:
+                if keyword.lower() in text:
+                    party_counts[party.upper()] += 1
+                    mention_counts[f"{keyword}_mentions"] += 1
 
         if t.entities and "hashtags" in t.entities:
             for tag in t.entities["hashtags"]:
                 ht = "#" + tag["tag"].lower()
                 hashtag_counter[ht] += 1
 
-        for kw in specific_keywords:
-            if kw.lower() in text:
-                keyword_counter[kw] += 1
-
         views = t.public_metrics.get("impression_count", 0)
-        if views > most_viewed["views"]:
-            most_viewed = {
-                "views": views,
-                "text": t.text,
-                "url": f"https://x.com/{handle}/status/{t.id}"
-            }
+        tweet_views.append({
+            "views": views,
+            "text": t.text,
+            "url": f"https://x.com/{handle}/status/{t.id}"
+        })
+
+    top3 = sorted(tweet_views, key=lambda x: x["views"], reverse=True)[:3]
 
     summary = {
         "Handle": handle,
         "Date": str(target_date),
-        "Total Tweets": counts["Total"],
-        "TDP Tweets": counts["TDP_Related"],
-        "YSRCP Tweets": counts["YSRCP_Related"],
-        "JSP Tweets": counts["JSP_Related"],
-        "BJP Tweets": counts["BJP_Related"],
-        "INC Tweets (Sharmila, AP only)": counts["INC_Related"],
-        "Govt Related Tweets": counts["Govt_Related"],
-        **{slot: time_slot_counter.get(slot, 0) for slot in time_slots},
-        "Top 50 Hashtags": "; ".join(f"{ht}:{c}" for ht, c in hashtag_counter.most_common(50)),
-        "Top Tweet Views": most_viewed["views"],
-        "Top Tweet URL": most_viewed["url"],
-        "Top Tweet Text": most_viewed["text"]
+        "Total Tweets": len(tweets),
+        **{f"{party}_Tweets": party_counts[party] for party in party_counts},
+        **{slot: time_counts.get(slot, 0) for slot in time_slots},
+        "Top 50 Hashtags": "; ".join(f"{k}:{v}" for k, v in hashtag_counter.most_common(50)),
+        **{f"Top {i+1} Views": top3[i]["views"] if i < len(top3) else 0 for i in range(3)},
+        **{f"Top {i+1} URL": top3[i]["url"] if i < len(top3) else "" for i in range(3)},
+        **{f"Top {i+1} Text": top3[i]["text"] if i < len(top3) else "" for i in range(3)},
+        **mention_counts
     }
 
-    for kw in specific_keywords:
-        summary[f"{kw}_mentions"] = keyword_counter.get(kw, 0)
-
     collection.insert_one(summary)
-    print(f"✅ Inserted summary for @{handle}")
     return summary
-
 
 def run_in_batches(handles, batch_size=5):
     all_summaries = []
-    total_batches = (len(handles) + batch_size - 1) // batch_size
-
     for i in range(0, len(handles), batch_size):
         batch = handles[i:i + batch_size]
-        print(f"\n🧵 Starting batch {i//batch_size + 1}/{total_batches} — Handles: {batch}")
-        batch_summaries = []
-
         with ThreadPoolExecutor(max_workers=len(batch)) as executor:
             futures = {executor.submit(process_handle, h): h for h in batch}
             for future in as_completed(futures):
                 try:
                     result = future.result()
                     if result:
-                        batch_summaries.append(result)
+                        all_summaries.append(result)
                 except Exception as e:
-                    print(f"❌ Error processing {futures[future]}: {e}")
-
-        all_summaries.extend(batch_summaries)
+                    print(f"Error processing {futures[future]}: {e}")
         if i + batch_size < len(handles):
-            print("⏳ Sleeping 90 seconds to avoid rate limits...")
             time.sleep(90)
-
     return all_summaries
-
 
 def format_and_send_excel(filename):
     wb = load_workbook(filename)
@@ -244,20 +196,18 @@ def format_and_send_excel(filename):
         for cell in row:
             cell.border = thin_border
             cell.alignment = center_align
+        row[0].parent.row_dimensions[row[0].row].height = 22.5
 
     for cell in ws[1]:
         cell.fill = header_fill
         cell.font = header_font
 
     wb.save(filename)
-    print(f"📁 Final formatted Excel saved: {filename}")
 
     yag = yagmail.SMTP(user=SENDER_EMAIL, password=SENDER_PASSWORD)
-    subject = f"𝕏 Daily Twitter News Analysis Report - {dt.datetime.now().strftime('%d %B %Y')}"
-    body = "Hi,\n\nPlease find below the attached daily News Twitter analysis report.\n\nBest regards,\nNiveditha\nData Analyst Associate\nShowtime Consulting"
+    subject = f"𝕏 Daily Twitter News Analysis Report- {dt.datetime.now().strftime('%d %B %Y')}"
+    body = "Hi,\n\nPlease find below the attached daily News Twitter analysis report.\n\nRegards,\nNiveditha\nData analyst Associate\nShowtime consulting"
     yag.send(to=TO_EMAIL, cc=CC_EMAIL, subject=subject, contents=body, attachments=[filename])
-    print(f"📧 Email sent to {TO_EMAIL} with CC to {CC_EMAIL}")
-
 
 if __name__ == "__main__":
     output_filename = "daily_twitter_analysis.xlsx"
