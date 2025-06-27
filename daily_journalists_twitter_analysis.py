@@ -179,7 +179,7 @@ def format_and_send_excel(filename):
     wb.save(filename)
 
     yag = yagmail.SMTP(user=SENDER_EMAIL, password=SENDER_PASSWORD)
-    subject = f"𝕏Journalist Twitter Report – {dt.datetime.now().strftime('%d %B %Y')}"
+    subject = f"𝕏 Journalist Twitter Report – {dt.datetime.now().strftime('%d %B %Y')}"
     body = "Hi,\n\nPlease find below the attached journalist Twitter analysis report.\n\nRegards,\nNiveditha\nData Analyst\nShowtime Consulting"
     yag.send(to=TO_EMAIL, cc=CC_EMAIL, subject=subject, contents=body, attachments=[filename])
 
