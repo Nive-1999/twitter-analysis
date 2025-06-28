@@ -48,6 +48,38 @@ journalist_handles = [
     "Avinashpujari02", "nabilajamal_", "YakkatiSowmith", "Hindu_vs", "UjwalB_Journo",
     "NageshT93116498", "crime_kumar", "KanizaGarari", "KP_Aashish", "balaexpressTNIE"
 ]
+# ==== Party Keyword Dictionary ====
+party_keywords = {
+    "TDP": ["chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", "nandamuribalakrishna",
+            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
+            "Vangalapudianitha", "@anitha_TDP",
+            "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి",
+            "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
+    "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
+    "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
+    "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
+    "INC": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
+}
+
+# ==== Exact Keyword Mentions ====
+specific_keywords = [
+    "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
+    "tdp", "ysrcp", "naralokesh", "janasena",
+    "pithapuram", "thallikivandanam", "rapparappa",
+    "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
+    "నారా లోకేష్", "లోకేష్"
+]
+# ==== Government and Telangana Keywords ====
+govt_keywords = [
+    "government", "govt", "cabinet", "minister", "mla", "mp","apliquorscam"
+    "policy", "scheme", "budget", "official", "administration","#apliquorscam"
+    "ఆదేశాలు", "ప్రభుత్వం", "మంత్రివర్గం", "తీర్మానం"
+]
+
+telangana_keywords = [
+    "hyderabad", "kcr", "ktr", "b.r.s", "brs", "telangana",
+    "తెలంగాణ", "కేసీఆర్", "కేటీఆర్","cmrevanthreddy","INC"
+]
 
 # ==== Time Slot Configuration ====
 time_slots = {
@@ -97,38 +129,101 @@ def fetch_tweets(username, start_time, end_time, max_results=100):
     return tweets
 
 def process_handle(handle):
+    print(f"\n📥 Processing @{handle}...")
     tweets = fetch_tweets(handle, start_time, end_time)
-    time_counts = Counter()
-    tweet_views = []
+    
+    counts = defaultdict(int)
+    hashtag_counter = Counter()
+    mention_counter = Counter()
+    keyword_counter = Counter()
+    time_slot_counter = Counter()
+    all_tweet_views = []
 
     for t in tweets:
-        dt_ist = t.created_at.astimezone(ist)
-        slot = get_time_slot(dt_ist)
-        time_counts[slot] += 1
+        dt = t.created_at.astimezone(ist)
+        text = unicodedata.normalize("NFKC", t.text.lower())
+        
+        counts["Total"] += 1
+        slot = get_time_slot(dt)
+        time_slot_counter[slot] += 1
 
+        # Party-related classification
+        for party, keywords in party_keywords.items():
+            if party == "inc":
+                if "sharmila" in text or "ys sharmila" in text:
+                    if not any(tel_kw in text for tel_kw in telangana_keywords):
+                        counts["INC_Related"] += 1
+                continue
+            if any(kw.lower() in text for kw in keywords):
+                counts[f"{party.upper()}_Related"] += 1
+                break
+
+        # Govt keywords
+        if any(gk in text for gk in govt_keywords):
+            counts["Govt_Related"] += 1
+
+        # Hashtags
+        if t.entities and "hashtags" in t.entities:
+            for tag in t.entities["hashtags"]:
+                ht = "#" + tag["tag"].lower()
+                hashtag_counter[ht] += 1
+
+        # Mentions
+        if t.entities and "mentions" in t.entities:
+            for mention in t.entities["mentions"]:
+                username = "@" + mention["username"].lower()
+                mention_counter[username] += 1
+
+        # Specific keywords
+        for kw in specific_keywords:
+            if kw.lower() in text:
+                keyword_counter[kw] += 1
+
+        # Tweet view info
         views = t.public_metrics.get("impression_count", 0)
-        tweet_views.append({
+        all_tweet_views.append({
             "views": views,
             "text": t.text,
             "url": f"https://x.com/{handle}/status/{t.id}"
         })
 
-    top3 = sorted(tweet_views, key=lambda x: x["views"], reverse=True)[:3]
+    print(f"✅ @{handle}: Total={counts['Total']} | TDP={counts['TDP_Related']} | YSRCP={counts['YSRCP_Related']} | JSP={counts['JSP_Related']} | BJP={counts['BJP_Related']} | INC={counts['INC_Related']} | Govt={counts['Govt_Related']}")
+
+    # Top 3 most viewed tweets
+    top3 = sorted(all_tweet_views, key=lambda x: x["views"], reverse=True)[:3]
 
     summary = {
         "Handle": handle,
         "Date": str(target_date),
-        "Total Tweets": len(tweets),
-        **{slot: time_counts.get(slot, 0) for slot in time_slots},
-        **{f"Top {i+1} Views": top3[i]["views"] if i < len(top3) else 0 for i in range(3)},
-        **{f"Top {i+1} URL": top3[i]["url"] if i < len(top3) else "" for i in range(3)},
-        **{f"Top {i+1} Text": top3[i]["text"] if i < len(top3) else "" for i in range(3)}
+        "Total Tweets": counts["Total"],
+        "TDP Tweets": counts["TDP_Related"],
+        "YSRCP Tweets": counts["YSRCP_Related"],
+        "JSP Tweets": counts["JSP_Related"],
+        "BJP Tweets": counts["BJP_Related"],
+        "INC Tweets (Sharmila, AP only)": counts["INC_Related"],
+        "Govt Related Tweets": counts["Govt_Related"],
+        **{slot: time_slot_counter.get(slot, 0) for slot in time_slots},
+        "Top 50 Hashtags": "; ".join(f"{ht}:{c}" for ht, c in hashtag_counter.most_common(50)),
+        "Top 50 Mentions": "; ".join(f"{m}:{c}" for m, c in mention_counter.most_common(50)),
     }
 
-    collection.insert_one(summary)
-    return summary
+    # Top 3 tweet details
+    for i in range(3):
+        if i < len(top3):
+            summary[f"Top {i+1} Tweet Views"] = top3[i]["views"]
+            summary[f"Top {i+1} Tweet URL"] = top3[i]["url"]
+            summary[f"Top {i+1} Tweet Text"] = top3[i]["text"]
+        else:
+            summary[f"Top {i+1} Tweet Views"] = ""
+            summary[f"Top {i+1} Tweet URL"] = ""
+            summary[f"Top {i+1} Tweet Text"] = ""
 
-def run_in_batches(handles, batch_size=4):
+    # Specific keyword mentions
+    for kw in specific_keywords:
+        summary[f"{kw}_mentions"] = keyword_counter.get(kw, 0)
+
+    return summary
+def run_in_batches(handles, batch_size=5):
     all_summaries = []
     for i in range(0, len(handles), batch_size):
         batch = handles[i:i + batch_size]
@@ -144,7 +239,6 @@ def run_in_batches(handles, batch_size=4):
         if i + batch_size < len(handles):
             time.sleep(90)
     return all_summaries
-
 def format_and_send_excel(filename):
     wb = load_workbook(filename)
     ws = wb.active
