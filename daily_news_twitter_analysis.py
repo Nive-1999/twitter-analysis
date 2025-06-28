@@ -50,11 +50,15 @@ news_handles = [
 
 # ==== Party Keyword Dictionary ====
 party_keywords = {
-    "TDP": ["chandrababu", "tdp", "naralokesh", "ncbn"],
-    "YCP": ["ysjagan", "ysrcp", "ys jagan"],
+    "TDP": ["chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", "nandamuribalakrishna",
+            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
+            "Vangalapudianitha", "@anitha_TDP",
+            "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి",
+            "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
+    "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
     "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
-    "BJP": ["bjp", "modi", "amit shah", "narendra modi"],
-    "INC": ["rahul gandhi", "congress", "inc", "yssharmila"]
+    "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi],
+    "INC": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
 }
 
 # ==== Exact Keyword Mentions ====
