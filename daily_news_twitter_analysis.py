@@ -57,7 +57,7 @@ party_keywords = {
             "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
     "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
     "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
-    "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi],
+    "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
     "INC": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
 }
 
