@@ -52,7 +52,7 @@ news_handles = [
 party_keywords = {
     "TDP": ["chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", "nandamuribalakrishna",
             "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
-            "Vangalapudianitha", "@anitha_TDP",
+            "Vangalapudianitha", "@anitha_TDP","#QuantumValley",
             "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి",
             "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
     "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
@@ -63,7 +63,7 @@ party_keywords = {
 
 # ==== Exact Keyword Mentions ====
 specific_keywords = [
-    "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
+    "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan","QuantumValley","vijayawada",
     "tdp", "ysrcp", "naralokesh", "janasena",
     "pithapuram", "thallikivandanam", "rapparappa",
     "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
