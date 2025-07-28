@@ -58,14 +58,14 @@ party_keywords = {
     "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
     "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
     "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
-    "INC": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
+    "INC": [ "yssharmila", "indian national congress", "inc"]
 }
 
 # ==== Exact Keyword Mentions ====
 specific_keywords = [
     "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan","QuantumValley","vijayawada",
     "tdp", "ysrcp", "naralokesh", "janasena",
-    "pithapuram", "thallikivandanam", "rapparappa",
+    "pithapuram", 
     "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
     "నారా లోకేష్", "లోకేష్"
 ]
