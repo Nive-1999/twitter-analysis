@@ -1,9 +1,9 @@
-name: 🐦 Daily Twitter News Analysis (3PM IST Email)
+name: 🐦 Daily Twitter News Analysis (6PM IST, Mon–Sat)
 
 on:
   schedule:
-    - cron: '30 09 * * *'  # ⏰ Runs every day at 3:00 PM IST (09:30 UTC)
-  workflow_dispatch:       # ✅ Allows manual trigger too
+    - cron: '30 12 * * 1-6'  # ⏰ Runs at 6:00 PM IST, Monday–Saturday
+  workflow_dispatch:         # ✅ Manual trigger option
 
 jobs:
   run-daily-twitter-analysis:
@@ -37,4 +37,3 @@ jobs:
       - name: ▶️ Run daily_news_twitter_analysis.py
         run: |
           python daily_news_twitter_analysis.py
-
