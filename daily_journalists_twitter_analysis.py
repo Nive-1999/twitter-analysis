@@ -1,5 +1,3 @@
-# journalist_twitter_analysis.py
-
 import os
 import tweepy
 from collections import Counter, defaultdict
@@ -58,21 +56,22 @@ party_keywords = {
     "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
     "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
     "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
-    "INC": [ "indian national congress", "yssharmila", "inc"]
+    "INC": [ "yssharmila", "inc"]
 }
 
 # ==== Exact Keyword Mentions ====
 specific_keywords = [
     "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
     "tdp", "ysrcp", "naralokesh", "janasena",
-    "pithapuram",
+    "pithapuram", "thallikivandanam", "rapparappa",
     "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
     "నారా లోకేష్", "లోకేష్"
 ]
 # ==== Government and Telangana Keywords ====
 govt_keywords = [
-     "cabinetmeeting","apliquorscam"
-    "policy", "scheme", "budget","#apliquorscam"
+    "cabinetmeeting", "apliquorscam"
+    "policy", "scheme", "budget", "#apliquorscam"
+   
 ]
 
 telangana_keywords = [
@@ -127,10 +126,12 @@ def fetch_tweets(username, start_time, end_time, max_results=100):
         print(f"Error fetching tweets for {username}: {e}")
     return tweets
 
+# Modified version of `process_handle` function to handle reposts (retweets) with original tweet view count if available
+
 def process_handle(handle):
     print(f"\n📥 Processing @{handle}...")
     tweets = fetch_tweets(handle, start_time, end_time)
-    
+
     counts = defaultdict(int)
     hashtag_counter = Counter()
     mention_counter = Counter()
@@ -139,11 +140,11 @@ def process_handle(handle):
     all_tweet_views = []
 
     for t in tweets:
-        dt = t.created_at.astimezone(ist)
+        dt_local = t.created_at.astimezone(ist)
         text = unicodedata.normalize("NFKC", t.text.lower())
-        
+
         counts["Total"] += 1
-        slot = get_time_slot(dt)
+        slot = get_time_slot(dt_local)
         time_slot_counter[slot] += 1
 
         # Party-related classification
@@ -178,13 +179,32 @@ def process_handle(handle):
             if kw.lower() in text:
                 keyword_counter[kw] += 1
 
-        # Tweet view info
-        views = t.public_metrics.get("impression_count", 0)
-        all_tweet_views.append({
-            "views": views,
-            "text": t.text,
-            "url": f"https://x.com/{handle}/status/{t.id}"
-        })
+        # Check if tweet is a repost (retweet)
+        views = 0
+        if hasattr(t, "referenced_tweets") and t.referenced_tweets:
+            for ref in t.referenced_tweets:
+                if ref["type"] == "retweeted":
+                    try:
+                        original = client.get_tweet(
+                            id=ref["id"],
+                            tweet_fields=["public_metrics", "text"]
+                        )
+                        if original.data:
+                            views = original.data.public_metrics.get("impression_count", 0)
+                            all_tweet_views.append({
+                                "views": views,
+                                "text": original.data.text,
+                                "url": f"https://x.com/{handle}/status/{t.id}"
+                            })
+                    except Exception as e:
+                        print(f"Error fetching original tweet {ref['id']}: {e}")
+        else:
+            views = t.public_metrics.get("impression_count", 0)
+            all_tweet_views.append({
+                "views": views,
+                "text": t.text,
+                "url": f"https://x.com/{handle}/status/{t.id}"
+            })
 
     print(f"✅ @{handle}: Total={counts['Total']} | TDP={counts['TDP_Related']} | YSRCP={counts['YSRCP_Related']} | JSP={counts['JSP_Related']} | BJP={counts['BJP_Related']} | INC={counts['INC_Related']} | Govt={counts['Govt_Related']}")
 
@@ -206,7 +226,6 @@ def process_handle(handle):
         "Top 50 Mentions": "; ".join(f"{m}:{c}" for m, c in mention_counter.most_common(50)),
     }
 
-    # Top 3 tweet details
     for i in range(3):
         if i < len(top3):
             summary[f"Top {i+1} Tweet Views"] = top3[i]["views"]
@@ -217,11 +236,11 @@ def process_handle(handle):
             summary[f"Top {i+1} Tweet URL"] = ""
             summary[f"Top {i+1} Tweet Text"] = ""
 
-    # Specific keyword mentions
     for kw in specific_keywords:
         summary[f"{kw}_mentions"] = keyword_counter.get(kw, 0)
 
     return summary
+
 def run_in_batches(handles, batch_size=5):
     all_summaries = []
     for i in range(0, len(handles), batch_size):
