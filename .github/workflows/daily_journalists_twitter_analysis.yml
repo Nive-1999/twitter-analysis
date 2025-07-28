@@ -38,7 +38,3 @@ jobs:
         run: |
           python daily_journalists_twitter_analysis.py
 
-
-
-
-
