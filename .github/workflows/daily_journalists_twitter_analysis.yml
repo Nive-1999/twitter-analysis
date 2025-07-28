@@ -1,9 +1,9 @@
-name: 🧑‍💼 Daily Journalist Twitter Analysis (4PM IST Email)
+name: 🧑‍💼 Daily Journalist Twitter Analysis (6PM IST Email)
 
 on:
   schedule:
-    - cron: '30 10 * * *'  # ⏰ Runs every day at 4:00 PM IST (10:30 UTC)
-  workflow_dispatch:
+    - cron: '30 12 * * 1-6'  # ⏰ Runs at 6:00 PM IST (12:30 UTC), Monday to Saturday
+  workflow_dispatch:         # ✅ Allows manual trigger too
 
 jobs:
   run-daily-journalist-analysis:
@@ -32,8 +32,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install yagmail keyring oauth2client
-          pip list
+          pip list  # ✅ Show installed packages
 
       - name: ▶️ Run daily_journalists_twitter_analysis.py
         run: |
           python daily_journalists_twitter_analysis.py
+
+
+
+
+
