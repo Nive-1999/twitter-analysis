@@ -37,4 +37,3 @@ jobs:
       - name: ▶️ Run daily_news_twitter_analysis.py
         run: |
           python daily_news_twitter_analysis.py
-          
