@@ -58,27 +58,26 @@ party_keywords = {
     "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
     "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
     "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
-    "INC": ["rahul gandhi", "congress", "indian national congress", "yssharmila", "inc"]
+    "INC": [ "indian national congress", "yssharmila", "inc"]
 }
 
 # ==== Exact Keyword Mentions ====
 specific_keywords = [
     "cmchandrababu", "ysjagan", "pawankalyan", "DeputyCMPawanKalyan",
     "tdp", "ysrcp", "naralokesh", "janasena",
-    "pithapuram", "thallikivandanam", "rapparappa",
+    "pithapuram",
     "ncbn", "chandrababuNaidu", "చంద్రబాబు", "సీమ్ చంద్రబాబు",
     "నారా లోకేష్", "లోకేష్"
 ]
 # ==== Government and Telangana Keywords ====
 govt_keywords = [
-    "government", "govt", "cabinet", "minister", "mla", "mp","apliquorscam"
-    "policy", "scheme", "budget", "official", "administration","#apliquorscam"
-    "ఆదేశాలు", "ప్రభుత్వం", "మంత్రివర్గం", "తీర్మానం"
+     "cabinetmeeting","apliquorscam"
+    "policy", "scheme", "budget","#apliquorscam"
 ]
 
 telangana_keywords = [
     "hyderabad", "kcr", "ktr", "b.r.s", "brs", "telangana",
-    "తెలంగాణ", "కేసీఆర్", "కేటీఆర్","cmrevanthreddy","INC"
+    "తెలంగాణ", "కేసీఆర్", "కేటీఆర్","cmrevanthreddy","rahul gandhi"
 ]
 
 # ==== Time Slot Configuration ====
