@@ -50,15 +50,27 @@ news_handles = [
 
 # ==== Party Keyword Dictionary ====
 party_keywords = {
-    "TDP": ["chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", "nandamuribalakrishna",
-            "#cmchandrababu", "#tdp", "#naralokesh", "Narachandrababunaidu",
-            "Vangalapudianitha", "@anitha_TDP","#QuantumValley",
-            "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి",
-            "మంత్రి లోకేష్", "మంత్రి నారా లోకేష్", "లోకేశ్"],
-    "YCP": ["jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "#ysjagan", "#ycp", "#ysrcp", "vidadalarajini","ysVijayamma","#sajjalaramakrishnareddy","#botsasatyanarayana"],
-    "JSP": ["pawankalyan", "janasena", "DeputyCMPawanKalyan"],
+  party_keywords = {
+    "TDP": [
+        "chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", 
+        "nandamuribalakrishna", "#cmchandrababu", "#tdp", "#naralokesh", 
+        "Narachandrababunaidu", "Vangalapudianitha", "@anitha_TDP", "#QuantumValley",
+        "చంద్రబాబు", "సీఎం చంద్రబాబు", "నారా లోకేష్", "లోకేష్", "బాలకృష్ణ", "టిడిపి"
+    ],
+    "YCP": [
+        "jagan", "ysjagan", "ysjaganmohanreddy", "ysr", "ysrcp", "ysrcparty",
+        "#ysjagan", "#ycp", "#ysrcp", "#ysrcparty",
+        "vidadalarajini", "ysVijayamma", "#sajjalaramakrishnareddy", "#botsasatyanarayana",
+        "జగన్", "వైఎస్సార్", "వైఎస్సార్సీపీ", "వైసీపీ"
+    ],
+    "JSP": [
+        "pawankalyan", "janasena", "DeputyCMPawanKalyan", "pawan kalyan",
+        "#janasena", "#pawankalyan", "@janasenaparty",
+        "పవన్ కళ్యాణ్", "జనసేన"
+    ],
     "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
-    "INC": [ "yssharmila", "indian national congress", "inc"]
+    "INC": ["yssharmila", "indian national congress", "inc"]
+}
 }
 
 # ==== Exact Keyword Mentions ====
