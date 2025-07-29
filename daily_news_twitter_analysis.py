@@ -49,7 +49,6 @@ news_handles = [
 ]
 
 # ==== Party Keyword Dictionary ====
-party_keywords = {
   party_keywords = {
     "TDP": [
         "chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", 
@@ -70,7 +69,6 @@ party_keywords = {
     ],
     "BJP": ["bjp", "modi", "amitshah", "narendra modi", "#bjp", "pmmodi"],
     "INC": ["yssharmila", "indian national congress", "inc"]
-}
 }
 
 # ==== Exact Keyword Mentions ====
