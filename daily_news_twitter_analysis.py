@@ -49,7 +49,7 @@ news_handles = [
 ]
 
 # ==== Party Keyword Dictionary ====
-  party_keywords = {
+party_keywords = {
     "TDP": [
         "chandrababuNaidu", "ncbn", "tdp", "Ministernaralokesh", "naralokesh", 
         "nandamuribalakrishna", "#cmchandrababu", "#tdp", "#naralokesh", 
